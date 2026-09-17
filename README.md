@@ -19,26 +19,47 @@ Early implementation: Next.js dashboard shell (`apps/web`), FastAPI backend
 are in place. Lab provisioning, auth, and the AI-driven features are not
 built yet — see the blueprint's build order (§29).
 
-## Running locally
+## Running it
+
+Two compose files, for two different purposes — don't run both at once,
+they claim the same host ports.
+
+### Local Docker Desktop dev (`docker-compose.local.yml`)
+
+Plain and fast: Postgres, the API, and the web app, each published directly
+on their usual ports — no nginx, no TLS, nothing to configure.
+
+```bash
+docker compose -f docker-compose.local.yml up --build
+```
+
+- Web: http://localhost:3000
+- API: http://localhost:8000/api/health
+- Postgres: localhost:5432
+
+### Cloud/domain deployment base (`docker-compose.yml`)
+
+The production-shaped stack: the same Postgres/API/web services, but fronted
+by nginx terminating TLS, with Let's Encrypt wired up for `$DOMAIN`. This is
+the one meant to run on an actual host that `$DOMAIN`'s DNS points at — see
+[`docs/blueprint.md`](docs/blueprint.md) for the AWS deployment target.
 
 ```bash
 cp .env.example .env   # set DOMAIN / CERTBOT_EMAIL if different
 docker compose up --build
 ```
 
-This starts Postgres, the API, the web app, and an nginx reverse proxy in
-front of both, terminating TLS. On first run, a `certbot-init` step drops in
-a self-signed placeholder certificate so nginx can start immediately —
-without any DNS or domain setup, you can reach the stack at
-`https://localhost/` (expect a browser certificate warning; that's the
-self-signed placeholder, not a bug) or by name with:
+On first run, a `certbot-init` step drops in a self-signed placeholder
+certificate so nginx can start immediately even with no DNS/domain pointed
+here yet — reach it at `https://localhost/` (expect a browser certificate
+warning; that's the self-signed placeholder, not a bug) or by name with:
 
 ```bash
 curl -k https://localhost/ -H "Host: ${DOMAIN:-smartcloud9.online}"
 curl -k https://localhost/api/health -H "Host: ${DOMAIN:-smartcloud9.online}"
 ```
 
-### Getting a real TLS certificate
+#### Getting a real TLS certificate
 
 Once this stack is actually deployed on a host that `$DOMAIN`'s DNS record
 points at, with ports 80/443 reachable from the public internet, run:

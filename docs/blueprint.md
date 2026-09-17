@@ -171,15 +171,26 @@ positioning) literally true instead of a claim.
 | Queue/cache | Redis | Jobs, rate limits, short-lived state |
 | Lab runtime | Docker | Fast, repeatable web labs |
 | IaC | Terraform | Cloud provisioning |
-| Cloud | Microsoft Azure | Lab infrastructure |
+| Cloud | Amazon Web Services (AWS) | Lab infrastructure |
 | CI/CD | GitHub Actions | Build, test, deployment |
-| Storage | Azure Blob Storage | Learning assets and lab files |
-| Monitoring | Azure Monitor/App Insights | Observability |
+| Storage | Amazon S3 | Learning assets and lab files |
+| Monitoring | Amazon CloudWatch | Observability |
 | Payments | Stripe or regional provider | Subscriptions |
 | **AI mentor & grading** | **Claude API (Sonnet-class)** | **Socratic hints (C), report grading (D)** |
 | **Telemetry capture** | **Reverse-proxy/tap per session** | **Tradecraft scoring input (B)** |
 | **Detection layer** | **Minimal WAF/IDS rules per lab container** | **Attack→detection feedback (E)** |
 | **Credentials** | **Open Badges 3.0 / W3C VC library, signing key in KMS** | **Verifiable skills passport (F)** |
+
+**Cloud choice: AWS over Azure.** Evaluated head-to-head on this workload,
+raw unit pricing across Postgres, Redis, object storage, and egress is
+within ~10–15% either way — not a deciding factor on its own. AWS wins on
+the two levers that actually matter for a platform whose dominant cost line
+is thousands of short, bursty lab-container sessions (§21): **Fargate
+Spot** can cut ephemeral container compute by up to ~70%, with no Azure
+Container Instances equivalent, and CloudWatch log ingestion is
+meaningfully cheaper than Azure Monitor at any real scale. Azure Blob edges
+out S3 on pure per-GB storage cost, but the platform isn't storage-heavy
+enough for that to offset the compute and monitoring gap.
 
 ## 9. High-Level Architecture
 
@@ -208,8 +219,8 @@ Postgres Redis  Billing/Auth  Mentor Svc   Grading Svc
 [Terraform]
    |
    v
-[Azure]
-   +--> Isolated Web Lab (+ Telemetry Tap, + Detection Layer)
+[AWS]
+   +--> Isolated Web Lab (Fargate/Fargate Spot + Telemetry Tap, + Detection Layer)
    +--> Network Lab (future)
    +--> Browser Attack Environment (future)
 
@@ -420,6 +431,10 @@ to the pricing model, rather than an open-ended cost center.
 ## 21. Cloud & LLM Cost Controls
 
 - Use containers for simple web labs; VMs only when required.
+- **Run ephemeral lab containers on Fargate Spot** rather than on-demand —
+  the single biggest available lever on the platform's dominant cost line,
+  since lab sessions are short and interruption-tolerant (a reclaimed Spot
+  task just re-provisions per the launch workflow in §10).
 - Limit concurrent sessions per account; set maximum session duration.
 - Destroy expired environments automatically.
 - Track infra cost per active session and completed lab.
@@ -466,7 +481,7 @@ to the pricing model, rather than an open-ended cost center.
 |---|---|---|
 | Weeks 1–2 | Foundation | Brand, UX, repo, auth (+role field), database, dashboard shell |
 | Weeks 3–4 | Lab engine | Catalogue, session model, Docker WEB001 **with ≥3 mutation variants**, unique-flag validation |
-| Weeks 5–6 | Provisioning | Queue, worker, mutation engine, controlled Terraform/Azure PoC (+ telemetry tap, detection layer modules) |
+| Weeks 5–6 | Provisioning | Queue, worker, mutation engine, controlled Terraform/AWS PoC (+ telemetry tap, detection layer modules) |
 | Weeks 7–8 | AI loop | Mentor service wired to hints, tradecraft telemetry capture + scoring, attack→detection log feed |
 | Weeks 9–10 | Grading & credentials | Report submission + Claude grading, verifiable credential issuance, steps/progress/achievements |
 | Weeks 11–12 | Commercial + beta | Subscriptions with AI usage metering, admin dashboard (incl. mentor/variant/cost views), security hardening, monitoring, pilot |
@@ -565,8 +580,8 @@ defensible differentiation:
 10. Implement report submission + grading service.
 11. Implement credential issuance service.
 12. Implement timer/expiry worker + cleanup.
-13. Create Azure Terraform proof of concept (target + tap + detection layer
-    modules).
+13. Create AWS Terraform proof of concept (target on Fargate + tap +
+    detection layer modules).
 14. Add subscription entitlement checks + AI usage metering.
 15. Add admin dashboard (sessions, variants, mentor/grading QA, cost).
 16. Add monitoring and logging.

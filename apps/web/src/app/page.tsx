@@ -17,9 +17,9 @@ const pathways = [
 
 const differentiators = [
   {
-    title: "Every session is unique",
+    title: "Proof that travels",
     detail:
-      "Labs are procedurally mutated per session, so a walkthrough for one student doesn't work for the next.",
+      "Finish a lab and get a verifiable credential an employer can check independently — not another certificate PDF nobody looks at.",
   },
   {
     title: "An AI mentor that asks, not tells",
@@ -27,14 +27,14 @@ const differentiators = [
       "Get a Socratic nudge grounded in what you've actually tried — never the answer.",
   },
   {
+    title: "Every session is unique",
+    detail:
+      "Labs are procedurally mutated per session, so a walkthrough for one student doesn't work for the next.",
+  },
+  {
     title: "Scored on methodology, not luck",
     detail:
       "Your technique, your written findings report, and your flag all factor into the score.",
-  },
-  {
-    title: "Proof that travels",
-    detail:
-      "Finish a lab and get a verifiable credential an employer can check independently.",
   },
 ];
 

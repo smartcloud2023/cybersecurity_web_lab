@@ -119,7 +119,10 @@ positioning) literally true instead of a claim.
 
 ## 6. Student Journey
 
-1. Create account, choose pathway.
+0. **(Optional, no account)** Try the limited no-account demo lab from the
+   landing page — no mentor, no grading, no credential (§20).
+1. Create account, choose pathway. New accounts get a 7-day free trial of
+   Beginner (card required), then auto-convert to $5/mo or lock (§20).
 2. Open WEB001, review objectives.
 3. Click "Launch Lab" → platform checks auth, entitlement, concurrency.
 4. Session created; **mutation engine selects a variant + unique flag**;
@@ -418,15 +421,28 @@ after the lab lifecycle is proven.
 
 ## 20. Subscription Model
 
+No permanent $0 subscription tier — every paying account starts monetizing
+from day one. Pricing standardized to USD (was mixed GBP/USD across
+revisions).
+
 | Plan | Indicative Price | Access | Mentor hints/mo | Report gradings/mo |
 |---|---|---|---|---|
-| Free | Free | Starter labs | 3 | 1 |
-| Pro | £15–£25/month | Core pathway | 30 | 10 |
-| Professional | £40–£60/month | More hours/advanced labs | Unlimited (soft cap + abuse throttle) | Unlimited (soft cap) |
-| Team | Per-seat | Instructor/team tools | Pooled per seat | Pooled per seat |
+| Beginner | $5/month | Starter labs | 3 | 1 |
+| Pro | $19–$29/month | Core pathway | 30 | 10 |
+| Professional | $49–$79/month | More hours/advanced labs | Unlimited (soft cap + abuse throttle) | Unlimited (soft cap) |
+| Team | Per-seat (~$15/seat/month) | Instructor/team tools | Pooled per seat | Pooled per seat |
 
 AI usage is metered per tier so LLM cost stays predictable and directly tied
 to the pricing model, rather than an open-ended cost center.
+
+**"A touch of free" without a free tier.** Two acquisition mechanisms sit
+outside the subscription model entirely, so top-of-funnel discoverability
+doesn't require reintroducing a $0 plan:
+- **No-account demo lab**: one heavily-limited lab (no AI mentor, no report
+  grading, no credential) playable from the landing page without signing up.
+- **7-day free trial of Beginner** (card required): converts automatically
+  to $5/mo, or the account locks — filters low-intent signups better than an
+  open-ended free tier while still giving genuine prospects a real taste.
 
 ## 21. Cloud & LLM Cost Controls
 
@@ -549,20 +565,31 @@ Weeks 11–12 as a hard beta gate rather than compressing the AI-loop weeks.
 ## 28. Differentiation
 
 The platform does not compete on the number of vulnerable machines. Its
-defensible differentiation:
+defensible differentiation, ordered by pull-to-subscribe strength rather
+than build order:
 
-1. **Every session is unique** — walkthroughs and shared answers stop
+1. **Proof that travels** — a signature a third party can check beats a
+   downloadable certificate image every incumbent already offers. This is
+   the strongest conversion hook: it answers the question a prospective
+   subscriber is actually asking ("will this get me hired"), not an
+   abstract learning-quality claim — lead with it on the landing page and
+   pricing page.
+2. **The mentor teaches, it doesn't answer** — a genuinely adaptive tutor
+   beats a static hint tree or a generic chatbot bolted on top, and directly
+   addresses the #1 beginner frustration (stuck with no help). Demo it live
+   pre-signup.
+3. **Every session is unique** — walkthroughs and shared answers stop
    working, a structural property competitors' static-machine architecture
-   can't retrofit without rebuilding their content pipeline.
-2. **The score means something** — methodology and report quality are
+   can't retrofit without rebuilding their content pipeline. A retention and
+   differentiation driver more than an acquisition one — sell it in
+   onboarding, not the homepage headline.
+4. **The score means something** — methodology and report quality are
    graded, not just "flag found," closer to what a hiring manager actually
-   wants to know.
-3. **The mentor teaches, it doesn't answer** — a genuinely adaptive tutor
-   beats a static hint tree or a generic chatbot bolted on top.
-4. **Full attacker→defender loop in one lab** — competitors treat offense
-   and defense as separate product lines; here it's one lab.
-5. **Proof that travels** — a signature a third party can check beats a
-   downloadable certificate image every incumbent already offers.
+   wants to know. Justifies Pro/Professional pricing more than it drives
+   initial signup.
+5. **Full attacker→defender loop in one lab** — competitors treat offense
+   and defense as separate product lines; here it's one lab. An in-product
+   delight moment rather than a marketing headline.
 
 ## 29. First Build Order
 

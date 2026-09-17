@@ -20,18 +20,87 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://cyberlab:cyberlab@db:5432/cyberlab
       ENVIRONMENT: development
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       db:
         condition: service_healthy
 
   web:
     build: ./apps/web
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     depends_on:
       - api
 
+  # One-shot: guarantees a certificate file exists before nginx's first start
+  # (nginx refuses to start if ssl_certificate points at a missing file). If
+  # Let's Encrypt hasn't issued a real one yet, this drops in a self-signed
+  # placeholder at the same path — init-letsencrypt.sh replaces it with a
+  # real certificate later without touching this container.
+  certbot-init:
+    image: alpine:3.20
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+    entrypoint: sh
+    command:
+      - -c
+      - |
+        set -e
+        apk add --no-cache openssl >/dev/null
+        DOMAIN_DIR="/etc/letsencrypt/live/${DOMAIN:-smartcloud9.online}"
+        if [ ! -f "$$DOMAIN_DIR/fullchain.pem" ]; then
+          mkdir -p "$$DOMAIN_DIR"
+          openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
+            -keyout "$$DOMAIN_DIR/privkey.pem" \
+            -out "$$DOMAIN_DIR/fullchain.pem" \
+            -subj "/CN=${DOMAIN:-smartcloud9.online}"
+          echo "Generated temporary self-signed cert for ${DOMAIN:-smartcloud9.online}"
+        else
+          echo "Certificate already present at $$DOMAIN_DIR, skipping"
+        fi
+
+  nginx:
+    image: nginx:1.27-alpine
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/templates:ro
+      - certbot-conf:/etc/letsencrypt:ro
+      - certbot-www:/var/www/certbot:ro
+    environment:
+      DOMAIN: ${DOMAIN:-smartcloud9.online}
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      certbot-init:
+        condition: service_completed_successfully
+      web:
+        condition: service_started
+      api:
+        condition: service_started
+    # The base image's default.conf would otherwise sit alongside our
+    # templated app.conf and catch requests with an unexpected Host header.
+    command: ["/bin/sh", "-c", "rm -f /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
+
+  # Renews the certificate on a loop once it's real (a no-op against the
+  # self-signed placeholder). Run init-letsencrypt.sh once on the actual
+  # deployment host to obtain the first real certificate.
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - certbot-conf:/etc/letsencrypt
+      - certbot-www:/var/www/certbot
+    entrypoint: sh
+    command:
+      - -c
+      - |
+        trap exit TERM
+        while :; do
+          certbot renew --webroot -w /var/www/certbot
+          sleep 12h & wait $${!}
+        done
+
 volumes:
   pgdata:
+  certbot-conf:
+  certbot-www:

@@ -24,7 +24,14 @@ services:
       # can reach. Anyone with the real SECRET_KEY can forge a login token
       # for any account.
       SECRET_KEY: local-dev-secret-do-not-use-in-production
-      CORS_ORIGINS: http://localhost:3000
+      # Must match the origin the browser actually loads the frontend from.
+      # Defaults to localhost for running this on your own machine — if
+      # you're deploying this compose file to a real host instead (e.g. a
+      # bare EC2 box without nginx in front), override both this and
+      # NEXT_PUBLIC_API_URL below with that host's address, e.g.:
+      #   CORS_ORIGINS=http://1.2.3.4:3000 NEXT_PUBLIC_API_URL=http://1.2.3.4:8000 \
+      #     docker compose -f docker-compose.local.yml up --build
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
     ports:
       - "8000:8000"
     depends_on:
@@ -36,8 +43,11 @@ services:
       context: ./apps/web
       # The browser talks to the API on its own published port here, not
       # through a shared-origin proxy — see the Dockerfile's ARG comment.
+      # Baked in at build time (NEXT_PUBLIC_* vars aren't read at container
+      # runtime), so this must be overridden *before* `up --build`, not
+      # after — see the CORS_ORIGINS comment above for the matching value.
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
     ports:
       - "3000:3000"
     depends_on:

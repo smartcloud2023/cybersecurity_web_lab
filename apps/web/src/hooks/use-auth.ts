@@ -35,6 +35,11 @@ type FetchResult =
 export function useCurrentUser(): {
   user: User | null;
   status: "loading" | "authenticated" | "unauthenticated";
+  // Profile/MFA mutations already return the fresh User in their response —
+  // this writes it straight into the cache instead of forcing a wasted
+  // refetch, so every consumer (topbar, other profile sections) sees the
+  // update immediately.
+  setUser: (user: User) => void;
 } {
   const token = useAuthToken();
   const [fetched, setFetched] = useState<FetchResult | null>(null);
@@ -54,19 +59,23 @@ export function useCurrentUser(): {
     };
   }, [token]);
 
+  function setUser(user: User) {
+    if (token) setFetched({ token, user });
+  }
+
   if (token === undefined) {
     // Not yet checked on the client — not the same as "no token found".
     // Treating this as unauthenticated would redirect away before the real
     // client-side localStorage read even runs.
-    return { user: null, status: "loading" };
+    return { user: null, status: "loading", setUser };
   }
   if (token === null) {
-    return { user: null, status: "unauthenticated" };
+    return { user: null, status: "unauthenticated", setUser };
   }
   if (fetched && fetched.token === token) {
     return "user" in fetched
-      ? { user: fetched.user, status: "authenticated" }
-      : { user: null, status: "unauthenticated" };
+      ? { user: fetched.user, status: "authenticated", setUser }
+      : { user: null, status: "unauthenticated", setUser };
   }
-  return { user: null, status: "loading" };
+  return { user: null, status: "loading", setUser };
 }

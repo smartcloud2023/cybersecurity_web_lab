@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, LogOut } from "lucide-react";
 import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
@@ -46,20 +47,22 @@ export function Topbar({
         </button>
 
         <div className="flex items-center gap-2">
-          <span
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
-            style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent)" }}
-          >
-            {initials}
-          </span>
-          <div className="hidden leading-tight sm:block">
-            <p className="max-w-[10rem] truncate text-sm font-medium">
-              {user?.email ?? "…"}
-            </p>
-            <p className="text-xs capitalize text-[var(--dash-ink-muted)]">
-              {user?.role ?? ""}
-            </p>
-          </div>
+          <Link href="/dashboard/profile" className="flex items-center gap-2 rounded-lg p-1 -m-1 hover:bg-[var(--dash-surface-raised)]">
+            <span
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
+              style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent)" }}
+            >
+              {initials}
+            </span>
+            <div className="hidden leading-tight sm:block">
+              <p className="max-w-[10rem] truncate text-sm font-medium">
+                {user?.email ?? "…"}
+              </p>
+              <p className="text-xs capitalize text-[var(--dash-ink-muted)]">
+                {user?.role ?? ""}
+              </p>
+            </div>
+          </Link>
           <button
             type="button"
             onClick={handleLogout}

@@ -8,7 +8,7 @@ import {
   Trophy,
   BadgeCheck,
   CreditCard,
-  Settings,
+  UserCircle,
   ShieldHalf,
 } from "lucide-react";
 
@@ -68,11 +68,11 @@ export function Sidebar() {
 
       <div className="space-y-3 border-t border-[var(--dash-border)] px-3 py-4">
         <Link
-          href="/dashboard/settings"
+          href="/dashboard/profile"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[var(--dash-ink-secondary)] hover:text-[var(--dash-ink)]"
         >
-          <Settings className="h-4 w-4" />
-          Settings
+          <UserCircle className="h-4 w-4" />
+          Profile
         </Link>
         <div className="rounded-lg p-3" style={{ backgroundColor: "var(--accent-soft)" }}>
           <p className="text-xs font-medium" style={{ color: "var(--accent)" }}>

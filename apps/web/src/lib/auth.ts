@@ -2,17 +2,59 @@ import { apiFetch } from "@/lib/api";
 
 export type UserRole = "student" | "instructor" | "admin";
 
+// Field names match the API's JSON wire format directly (snake_case) —
+// there's no transform layer, so what the backend returns is what the type
+// says. All the profile fields are optional: filled in later from the
+// profile page, not required at signup.
 export type User = {
   id: string;
   email: string;
   role: UserRole;
+  first_name?: string | null;
+  last_name?: string | null;
+  bio?: string | null;
+  avatar_url?: string | null;
+  github_url?: string | null;
+  linkedin_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
+  x_url?: string | null;
+  website_url?: string | null;
+  email_verified: boolean;
+  mfa_enabled: boolean;
+  created_at: string;
 };
+
+export type ProfileUpdate = Partial<
+  Pick<
+    User,
+    | "first_name"
+    | "last_name"
+    | "bio"
+    | "avatar_url"
+    | "github_url"
+    | "linkedin_url"
+    | "facebook_url"
+    | "instagram_url"
+    | "x_url"
+    | "website_url"
+  >
+>;
 
 type TokenResponse = {
   access_token: string;
   token_type: string;
   user: User;
 };
+
+// Discriminated on mfa_required, mirroring the API's LoginResponse.
+type LoginResponse =
+  | { mfa_required: false; access_token: string; token_type: string; user: User }
+  | { mfa_required: true; pending_token: string };
+
+export type LoginResult =
+  | { mfaRequired: false; user: User }
+  | { mfaRequired: true; pendingToken: string };
 
 const STORAGE_KEY = "cyberlab-token";
 
@@ -85,10 +127,22 @@ export async function register(email: string, password: string): Promise<User> {
   return data.user;
 }
 
-export async function login(email: string, password: string): Promise<User> {
-  const data = await apiFetch<TokenResponse>("/api/auth/login", {
+export async function login(email: string, password: string): Promise<LoginResult> {
+  const data = await apiFetch<LoginResponse>("/api/auth/login", {
     method: "POST",
     body: { email, password },
+  });
+  if (data.mfa_required) {
+    return { mfaRequired: true, pendingToken: data.pending_token };
+  }
+  setToken(data.access_token);
+  return { mfaRequired: false, user: data.user };
+}
+
+export async function mfaVerify(pendingToken: string, code: string): Promise<User> {
+  const data = await apiFetch<TokenResponse>("/api/auth/mfa/verify", {
+    method: "POST",
+    body: { pending_token: pendingToken, code },
   });
   setToken(data.access_token);
   return data.user;
@@ -96,4 +150,44 @@ export async function login(email: string, password: string): Promise<User> {
 
 export async function fetchCurrentUser(token: string): Promise<User> {
   return apiFetch<User>("/api/me", { token });
+}
+
+export async function updateProfile(token: string, patch: ProfileUpdate): Promise<User> {
+  return apiFetch<User>("/api/me", { method: "PATCH", token, body: patch });
+}
+
+export async function changePassword(
+  token: string,
+  currentPassword: string,
+  newPassword: string
+): Promise<void> {
+  await apiFetch<void>("/api/auth/change-password", {
+    method: "POST",
+    token,
+    body: { current_password: currentPassword, new_password: newPassword },
+  });
+}
+
+export async function verifyEmail(token: string, code: string): Promise<User> {
+  return apiFetch<User>("/api/auth/verify-email", { method: "POST", token, body: { code } });
+}
+
+export async function resendVerification(token: string): Promise<void> {
+  await apiFetch<void>("/api/auth/resend-verification", { method: "POST", token });
+}
+
+export async function mfaSetup(token: string): Promise<{ secret: string; otpauthUri: string }> {
+  const data = await apiFetch<{ secret: string; otpauth_uri: string }>("/api/auth/mfa/setup", {
+    method: "POST",
+    token,
+  });
+  return { secret: data.secret, otpauthUri: data.otpauth_uri };
+}
+
+export async function mfaConfirm(token: string, code: string): Promise<User> {
+  return apiFetch<User>("/api/auth/mfa/confirm", { method: "POST", token, body: { code } });
+}
+
+export async function mfaDisable(token: string, password: string): Promise<void> {
+  await apiFetch<void>("/api/auth/mfa/disable", { method: "POST", token, body: { password } });
 }

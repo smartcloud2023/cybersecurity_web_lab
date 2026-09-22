@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { register } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { AuthShell } from "@/components/auth/auth-shell";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       await register(email, password);
-      router.push("/dashboard");
+      router.push("/verify-email");
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
     } finally {
@@ -28,50 +29,72 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Create account</h1>
-      <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
-        <label className="flex flex-col gap-1 text-sm">
-          Email
+    <AuthShell
+      eyebrow="Get started"
+      title="Create your account"
+      subtitle="Practice real attacker techniques in isolated, disposable labs."
+      footer={
+        <>
+          Already have an account?{" "}
+          <Link href="/login" className="font-medium" style={{ color: "var(--accent)" }}>
+            Log in
+          </Link>
+        </>
+      }
+    >
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="text-[var(--dash-ink-secondary)]">Email address</span>
           <input
             type="email"
             name="email"
             required
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-md border border-black/15 px-3 py-2 dark:border-white/15"
+            className="rounded-lg border px-3 py-2.5 text-[var(--dash-ink)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ borderColor: "var(--dash-border)", backgroundColor: "var(--dash-surface-raised)" }}
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Password
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="text-[var(--dash-ink-secondary)]">Password</span>
           <input
             type="password"
             name="password"
             required
             minLength={8}
+            autoComplete="new-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-md border border-black/15 px-3 py-2 dark:border-white/15"
+            className="rounded-lg border px-3 py-2.5 text-[var(--dash-ink)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ borderColor: "var(--dash-border)", backgroundColor: "var(--dash-surface-raised)" }}
           />
-          <span className="text-xs text-black/50 dark:text-white/50">
-            At least 8 characters.
-          </span>
+          <span className="text-xs text-[var(--dash-ink-muted)]">At least 8 characters.</span>
         </label>
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+        {error && <p className="text-sm text-red-400">{error}</p>}
+
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-foreground px-4 py-2 text-background hover:opacity-90 disabled:opacity-50"
+          className="mt-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+          style={{ backgroundColor: "var(--accent)", color: "var(--accent-ink)" }}
         >
-          {submitting ? "Creating account…" : "Sign up"}
+          {submitting ? "Creating account…" : "Create account"}
         </button>
+
+        <p className="text-center text-xs text-[var(--dash-ink-muted)]">
+          By creating an account you agree to our{" "}
+          <Link href="/terms" className="underline underline-offset-2">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline underline-offset-2">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </form>
-      <p className="mt-4 text-sm text-black/60 dark:text-white/60">
-        Already have an account?{" "}
-        <Link href="/login" className="underline underline-offset-4">
-          Log in
-        </Link>
-      </p>
-    </div>
+    </AuthShell>
   );
 }

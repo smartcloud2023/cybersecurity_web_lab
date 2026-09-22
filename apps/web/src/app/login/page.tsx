@@ -3,8 +3,10 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { login } from "@/lib/auth";
+import { login, mfaVerify } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { OtpInput } from "@/components/auth/otp-input";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,13 +15,21 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
+  const [mfaCode, setMfaCode] = useState("");
+  const [mfaSubmitting, setMfaSubmitting] = useState(false);
+
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
     try {
-      await login(email, password);
-      router.push("/dashboard");
+      const result = await login(email, password);
+      if (result.mfaRequired) {
+        setPendingToken(result.pendingToken);
+      } else {
+        router.push("/dashboard");
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
     } finally {
@@ -27,47 +37,110 @@ export default function LoginPage() {
     }
   }
 
+  async function handleMfaSubmit() {
+    if (!pendingToken || mfaCode.length !== 6) return;
+    setError(null);
+    setMfaSubmitting(true);
+    try {
+      await mfaVerify(pendingToken, mfaCode);
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
+    } finally {
+      setMfaSubmitting(false);
+    }
+  }
+
+  if (pendingToken) {
+    return (
+      <AuthShell
+        eyebrow="Two-factor authentication"
+        title="Enter your authenticator code"
+        subtitle="Open your authenticator app and enter the current 6-digit code."
+        footer={
+          <button
+            type="button"
+            onClick={() => {
+              setPendingToken(null);
+              setMfaCode("");
+              setError(null);
+            }}
+            className="text-[var(--dash-ink-muted)] underline underline-offset-2 hover:text-[var(--dash-ink)]"
+          >
+            Back to log in
+          </button>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <OtpInput value={mfaCode} onChange={setMfaCode} disabled={mfaSubmitting} />
+          {error && <p className="text-sm text-red-400">{error}</p>}
+          <button
+            type="button"
+            onClick={handleMfaSubmit}
+            disabled={mfaSubmitting || mfaCode.length !== 6}
+            className="mt-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+            style={{ backgroundColor: "var(--accent)", color: "var(--accent-ink)" }}
+          >
+            {mfaSubmitting ? "Verifying…" : "Verify and log in"}
+          </button>
+        </div>
+      </AuthShell>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-sm px-6 py-16">
-      <h1 className="text-2xl font-semibold tracking-tight">Log in</h1>
-      <form className="mt-6 flex flex-col gap-4" onSubmit={handleSubmit}>
-        <label className="flex flex-col gap-1 text-sm">
-          Email
+    <AuthShell
+      eyebrow="Welcome back"
+      title="Log in"
+      subtitle="Pick up where you left off."
+      footer={
+        <>
+          No account?{" "}
+          <Link href="/register" className="font-medium" style={{ color: "var(--accent)" }}>
+            Sign up
+          </Link>
+        </>
+      }
+    >
+      <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="text-[var(--dash-ink-secondary)]">Email address</span>
           <input
             type="email"
             name="email"
             required
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="rounded-md border border-black/15 px-3 py-2 dark:border-white/15"
+            className="rounded-lg border px-3 py-2.5 text-[var(--dash-ink)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ borderColor: "var(--dash-border)", backgroundColor: "var(--dash-surface-raised)" }}
           />
         </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Password
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="text-[var(--dash-ink-secondary)]">Password</span>
           <input
             type="password"
             name="password"
             required
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="rounded-md border border-black/15 px-3 py-2 dark:border-white/15"
+            className="rounded-lg border px-3 py-2.5 text-[var(--dash-ink)] outline-none focus:ring-2 focus:ring-[var(--accent)]"
+            style={{ borderColor: "var(--dash-border)", backgroundColor: "var(--dash-surface-raised)" }}
           />
         </label>
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+        {error && <p className="text-sm text-red-400">{error}</p>}
+
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-foreground px-4 py-2 text-background hover:opacity-90 disabled:opacity-50"
+          className="mt-1 rounded-lg px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+          style={{ backgroundColor: "var(--accent)", color: "var(--accent-ink)" }}
         >
           {submitting ? "Logging in…" : "Log in"}
         </button>
       </form>
-      <p className="mt-4 text-sm text-black/60 dark:text-white/60">
-        No account?{" "}
-        <Link href="/register" className="underline underline-offset-4">
-          Sign up
-        </Link>
-      </p>
-    </div>
+    </AuthShell>
   );
 }

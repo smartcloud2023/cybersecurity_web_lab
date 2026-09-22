@@ -55,8 +55,8 @@ here yet — reach it at `https://localhost/` (expect a browser certificate
 warning; that's the self-signed placeholder, not a bug) or by name with:
 
 ```bash
-curl -k https://localhost/ -H "Host: ${DOMAIN:-smartcloud9.online}"
-curl -k https://localhost/api/health -H "Host: ${DOMAIN:-smartcloud9.online}"
+curl -k https://localhost/ -H "Host: ${DOMAIN:-sec.digitalwitch.online}"
+curl -k https://localhost/api/health -H "Host: ${DOMAIN:-sec.digitalwitch.online}"
 ```
 
 #### Getting a real TLS certificate

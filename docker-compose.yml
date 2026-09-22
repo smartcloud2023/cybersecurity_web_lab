@@ -48,14 +48,14 @@ services:
       - |
         set -e
         apk add --no-cache openssl >/dev/null
-        DOMAIN_DIR="/etc/letsencrypt/live/${DOMAIN:-smartcloud9.online}"
+        DOMAIN_DIR="/etc/letsencrypt/live/${DOMAIN:-sec.digitalwitch.online}"
         if [ ! -f "$$DOMAIN_DIR/fullchain.pem" ]; then
           mkdir -p "$$DOMAIN_DIR"
           openssl req -x509 -nodes -newkey rsa:2048 -days 1 \
             -keyout "$$DOMAIN_DIR/privkey.pem" \
             -out "$$DOMAIN_DIR/fullchain.pem" \
-            -subj "/CN=${DOMAIN:-smartcloud9.online}"
-          echo "Generated temporary self-signed cert for ${DOMAIN:-smartcloud9.online}"
+            -subj "/CN=${DOMAIN:-sec.digitalwitch.online}"
+          echo "Generated temporary self-signed cert for ${DOMAIN:-sec.digitalwitch.online}"
         else
           echo "Certificate already present at $$DOMAIN_DIR, skipping"
         fi
@@ -67,7 +67,7 @@ services:
       - certbot-conf:/etc/letsencrypt:ro
       - certbot-www:/var/www/certbot:ro
     environment:
-      DOMAIN: ${DOMAIN:-smartcloud9.online}
+      DOMAIN: ${DOMAIN:-sec.digitalwitch.online}
     ports:
       - "80:80"
       - "443:443"

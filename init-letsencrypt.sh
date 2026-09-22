@@ -7,7 +7,7 @@
 # Let's Encrypt certificate.
 set -euo pipefail
 
-DOMAIN="${DOMAIN:-smartcloud9.online}"
+DOMAIN="${DOMAIN:-sec.digitalwitch.online}"
 EMAIL="${CERTBOT_EMAIL:-chukwunonsosmartagbawo@gmail.com}"
 
 echo "### Requesting a Let's Encrypt certificate for $DOMAIN ($EMAIL)"

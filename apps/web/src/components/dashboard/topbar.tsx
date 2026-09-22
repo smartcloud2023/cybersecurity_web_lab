@@ -1,5 +1,10 @@
-import { Bell } from "lucide-react";
+"use client";
+
+import { useRouter } from "next/navigation";
+import { Bell, LogOut } from "lucide-react";
 import { ThemeSwitcher } from "@/components/dashboard/theme-switcher";
+import { useCurrentUser } from "@/hooks/use-auth";
+import { logout } from "@/lib/auth";
 
 export function Topbar({
   title,
@@ -8,6 +13,15 @@ export function Topbar({
   title: string;
   breadcrumb?: string;
 }) {
+  const router = useRouter();
+  const { user } = useCurrentUser();
+  const initials = user?.email ? user.email.slice(0, 2).toUpperCase() : "??";
+
+  function handleLogout() {
+    logout();
+    router.replace("/login");
+  }
+
   return (
     <header className="dash flex items-center justify-between border-b border-[var(--dash-border)] bg-[var(--dash-surface)] px-6 py-4 text-[var(--dash-ink)]">
       <div>
@@ -33,15 +47,28 @@ export function Topbar({
 
         <div className="flex items-center gap-2">
           <span
-            className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold"
             style={{ backgroundColor: "var(--accent-soft)", color: "var(--accent)" }}
           >
-            ST
+            {initials}
           </span>
           <div className="hidden leading-tight sm:block">
-            <p className="text-sm font-medium">Student</p>
-            <p className="text-xs text-[var(--dash-ink-muted)]">Beginner plan</p>
+            <p className="max-w-[10rem] truncate text-sm font-medium">
+              {user?.email ?? "…"}
+            </p>
+            <p className="text-xs capitalize text-[var(--dash-ink-muted)]">
+              {user?.role ?? ""}
+            </p>
           </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            aria-label="Log out"
+            title="Log out"
+            className="rounded-full p-2 text-[var(--dash-ink-secondary)] hover:bg-[var(--dash-surface-raised)] hover:text-[var(--dash-ink)]"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
     </header>

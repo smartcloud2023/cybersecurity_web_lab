@@ -19,7 +19,12 @@ services:
     build: ./apps/api
     environment:
       DATABASE_URL: postgresql+psycopg://cyberlab:cyberlab@db:5432/cyberlab
-      ENVIRONMENT: development
+      ENVIRONMENT: production
+      # Set a real SECRET_KEY in .env before deploying — see .env.example.
+      # Anyone with this value can forge a login token for any account.
+      SECRET_KEY: ${SECRET_KEY:-please-set-a-real-secret-key-in-env}
+      # No CORS_ORIGINS override — web and api share an origin behind
+      # nginx, so cross-origin CORS never triggers here.
     expose:
       - "8000"
     depends_on:

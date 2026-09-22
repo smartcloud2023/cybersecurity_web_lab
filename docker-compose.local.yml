@@ -20,6 +20,11 @@ services:
     environment:
       DATABASE_URL: postgresql+psycopg://cyberlab:cyberlab@db:5432/cyberlab
       ENVIRONMENT: development
+      # Local-dev-only value — never reuse this outside a machine only you
+      # can reach. Anyone with the real SECRET_KEY can forge a login token
+      # for any account.
+      SECRET_KEY: local-dev-secret-do-not-use-in-production
+      CORS_ORIGINS: http://localhost:3000
     ports:
       - "8000:8000"
     depends_on:
@@ -27,7 +32,12 @@ services:
         condition: service_healthy
 
   web:
-    build: ./apps/web
+    build:
+      context: ./apps/web
+      # The browser talks to the API on its own published port here, not
+      # through a shared-origin proxy — see the Dockerfile's ARG comment.
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
     ports:
       - "3000:3000"
     depends_on:

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthToken } from "@/hooks/use-auth";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -11,6 +12,7 @@ const links = [
 
 export function NavBar() {
   const pathname = usePathname();
+  const token = useAuthToken();
   // The dashboard has its own sidebar/topbar shell (see app/dashboard) —
   // the marketing nav doesn't sit above it.
   if (pathname?.startsWith("/dashboard")) return null;
@@ -31,18 +33,29 @@ export function NavBar() {
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/login"
-            className="rounded-md border border-black/10 px-3 py-1.5 hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10"
-          >
-            Log in
-          </Link>
-          <Link
-            href="/register"
-            className="rounded-md bg-foreground px-3 py-1.5 text-background hover:opacity-90"
-          >
-            Sign up
-          </Link>
+          {token ? (
+            <Link
+              href="/dashboard"
+              className="rounded-md bg-foreground px-3 py-1.5 text-background hover:opacity-90"
+            >
+              Go to dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-md border border-black/10 px-3 py-1.5 hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-md bg-foreground px-3 py-1.5 text-background hover:opacity-90"
+              >
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>

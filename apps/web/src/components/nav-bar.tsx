@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 const links = [
   { href: "/dashboard", label: "Dashboard" },
@@ -7,6 +10,11 @@ const links = [
 ];
 
 export function NavBar() {
+  const pathname = usePathname();
+  // The dashboard has its own sidebar/topbar shell (see app/dashboard) —
+  // the marketing nav doesn't sit above it.
+  if (pathname?.startsWith("/dashboard")) return null;
+
   return (
     <header className="border-b border-black/10 dark:border-white/10">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">

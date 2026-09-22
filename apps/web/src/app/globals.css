@@ -24,3 +24,48 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Accent theme (dashboard only). Four selectable brand accents — the color
+ * *identity* of the UI (active nav, buttons, focus rings), never the chart
+ * series palette, which stays fixed per the dataviz skill's rule: "a surface
+ * adopts one [categorical] theme and freezes it." Each accent hex is a
+ * dark-surface-validated categorical step from the reference palette, so it
+ * already clears 3:1 contrast against the dashboard's dark chrome.
+ * Default: "ocean" — applied when no [data-accent] is set yet.
+ */
+:root,
+[data-accent="ocean"] {
+  --accent: #3987e5;
+  --accent-soft: rgba(57, 135, 229, 0.16);
+  --accent-ink: #ffffff;
+}
+[data-accent="violet"] {
+  --accent: #9085e9;
+  --accent-soft: rgba(144, 133, 233, 0.18);
+  --accent-ink: #ffffff;
+}
+[data-accent="aqua"] {
+  --accent: #1fb586;
+  --accent-soft: rgba(31, 181, 134, 0.18);
+  --accent-ink: #ffffff;
+}
+[data-accent="amber"] {
+  --accent: #d99a1f;
+  --accent-soft: rgba(217, 154, 31, 0.18);
+  --accent-ink: #0b0b0b;
+}
+
+/* Dashboard shell surfaces — always dark, independent of the marketing
+   site's OS-driven light/dark mode (matches the reference dashboard style:
+   a committed dark chrome with a colored accent, not a light/dark toggle). */
+.dash {
+  --dash-page: #0d0d0d;
+  --dash-surface: #17181a;
+  --dash-surface-raised: #1d1e21;
+  --dash-border: rgba(255, 255, 255, 0.08);
+  --dash-ink: #ffffff;
+  --dash-ink-secondary: #c3c2b7;
+  --dash-ink-muted: #898781;
+  color-scheme: dark;
+}

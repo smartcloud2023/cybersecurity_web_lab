@@ -3,7 +3,10 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { startAuthentication } from "@simplewebauthn/browser";
+import { Fingerprint } from "lucide-react";
 import { login, mfaVerify } from "@/lib/auth";
+import { passkeyLoginOptions, passkeyLoginVerify } from "@/lib/account";
 import { ApiError } from "@/lib/api";
 import { AuthShell } from "@/components/auth/auth-shell";
 import { OtpInput } from "@/components/auth/otp-input";
@@ -14,6 +17,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [passkeySubmitting, setPasskeySubmitting] = useState(false);
 
   const [pendingToken, setPendingToken] = useState<string | null>(null);
   const [mfaCode, setMfaCode] = useState("");
@@ -34,6 +38,31 @@ export default function LoginPage() {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handlePasskeyLogin() {
+    if (!email) {
+      setError("Enter your email first, then use a passkey.");
+      return;
+    }
+    setError(null);
+    setPasskeySubmitting(true);
+    try {
+      const { challengeToken, optionsJSON } = await passkeyLoginOptions(email);
+      const credential = await startAuthentication({ optionsJSON });
+      await passkeyLoginVerify(challengeToken, credential);
+      router.push("/dashboard");
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else if (err instanceof Error && err.name === "NotAllowedError") {
+        setError("Passkey login was cancelled.");
+      } else {
+        setError("That passkey didn't work.");
+      }
+    } finally {
+      setPasskeySubmitting(false);
     }
   }
 
@@ -139,6 +168,17 @@ export default function LoginPage() {
           style={{ backgroundColor: "var(--accent)", color: "var(--accent-ink)" }}
         >
           {submitting ? "Logging in…" : "Log in"}
+        </button>
+
+        <button
+          type="button"
+          onClick={handlePasskeyLogin}
+          disabled={passkeySubmitting}
+          className="inline-flex items-center justify-center gap-1.5 rounded-lg border px-4 py-2.5 text-sm font-medium text-[var(--dash-ink-secondary)] hover:text-[var(--dash-ink)] disabled:opacity-50"
+          style={{ borderColor: "var(--dash-border)" }}
+        >
+          <Fingerprint className="h-4 w-4" />
+          {passkeySubmitting ? "Waiting for device…" : "Log in with a passkey"}
         </button>
       </form>
     </AuthShell>

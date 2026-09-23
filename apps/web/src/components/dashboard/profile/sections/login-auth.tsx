@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Fingerprint, LifeBuoy, ShieldCheck } from "lucide-react";
+import { LifeBuoy, ShieldCheck } from "lucide-react";
 import { changePassword, mfaDisable, type User } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 import { Badge, Field, SaveButton, SectionCard, inputClass, inputStyle } from "../ui";
 import { ComingSoon } from "../coming-soon";
+import { PasskeysCard } from "./passkeys-card";
 
 export function LoginAuthSection({
   user,
@@ -165,13 +166,7 @@ export function LoginAuthSection({
         )}
       </SectionCard>
 
-      <SectionCard title="Passkeys">
-        <ComingSoon
-          icon={Fingerprint}
-          title="Passkeys aren't set up yet"
-          description="Passwordless sign-in with your device's biometrics or security key is planned but not built yet."
-        />
-      </SectionCard>
+      <PasskeysCard token={token} />
 
       <SectionCard title="Recovery">
         {user.email_verified ? (

@@ -10,7 +10,7 @@ from app.models._mixins import UUIDPrimaryKeyMixin, utcnow
 class AuditEvent(UUIDPrimaryKeyMixin, Base):
     __tablename__ = "audit_events"
 
-    actor: Mapped[str] = mapped_column(String(255))
+    actor: Mapped[str] = mapped_column(String(255), index=True)
     action: Mapped[str] = mapped_column(String(100))
     object: Mapped[str] = mapped_column(String(255))
     timestamp: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

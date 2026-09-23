@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.audit import record_audit_event
 from app.core.email import send_verification_email
 from app.core.security import (
     create_access_token,
@@ -19,6 +20,7 @@ from app.core.security import (
     verify_password,
     verify_totp_code,
 )
+from app.core.sessions import create_session
 from app.db.session import get_db
 from app.models.user import User
 from app.schemas.auth import (
@@ -51,9 +53,17 @@ def _issue_verification_code(user: User, background_tasks: BackgroundTasks) -> N
     background_tasks.add_task(send_verification_email, user.email, code)
 
 
+def _issue_session_token(db: Session, user: User, request: Request) -> str:
+    session = create_session(db, user.id, request)
+    return create_access_token(user.id, session.id)
+
+
 @router.post("/auth/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
 def register(
-    body: RegisterRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+    body: RegisterRequest,
+    request: Request,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
 ) -> TokenResponse:
     existing = db.scalar(select(User).where(User.email == body.email))
     if existing is not None:
@@ -69,15 +79,17 @@ def register(
     )
     _issue_verification_code(user, background_tasks)
     db.add(user)
+    db.flush()
+
+    token = _issue_session_token(db, user, request)
+    record_audit_event(db, user.id, "auth.register")
     db.commit()
     db.refresh(user)
-
-    token = create_access_token(user.id)
     return TokenResponse(access_token=token, user=UserOut.model_validate(user))
 
 
 @router.post("/auth/login", response_model=LoginResponse, response_model_exclude_none=True)
-def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
+def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)) -> LoginResponse:
     invalid = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Incorrect email or password",
@@ -90,12 +102,16 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> LoginResponse:
     if user.mfa_enabled:
         return LoginResponse(mfa_required=True, pending_token=create_mfa_pending_token(user.id))
 
-    token = create_access_token(user.id)
+    token = _issue_session_token(db, user, request)
+    record_audit_event(db, user.id, "auth.login")
+    db.commit()
     return LoginResponse(access_token=token, user=UserOut.model_validate(user))
 
 
 @router.post("/auth/mfa/verify", response_model=TokenResponse)
-def mfa_verify(body: MfaVerifyRequest, db: Session = Depends(get_db)) -> TokenResponse:
+def mfa_verify(
+    body: MfaVerifyRequest, request: Request, db: Session = Depends(get_db)
+) -> TokenResponse:
     session_expired = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="That login attempt expired — log in again",
@@ -112,7 +128,9 @@ def mfa_verify(body: MfaVerifyRequest, db: Session = Depends(get_db)) -> TokenRe
     if not verify_totp_code(user.mfa_secret, body.code):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect code")
 
-    token = create_access_token(user.id)
+    token = _issue_session_token(db, user, request)
+    record_audit_event(db, user.id, "auth.login", "mfa")
+    db.commit()
     return TokenResponse(access_token=token, user=UserOut.model_validate(user))
 
 
@@ -129,6 +147,7 @@ def update_me(
 ) -> UserOut:
     for field, value in body.model_dump(exclude_unset=True).items():
         setattr(current_user, field, value)
+    record_audit_event(db, current_user.id, "profile.updated")
     db.commit()
     db.refresh(current_user)
     return UserOut.model_validate(current_user)
@@ -145,6 +164,7 @@ def change_password(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Current password is incorrect"
         )
     current_user.hashed_password = hash_password(body.new_password)
+    record_audit_event(db, current_user.id, "auth.password_changed")
     db.commit()
 
 
@@ -170,6 +190,7 @@ def verify_email(
     current_user.email_verified = True
     current_user.verification_code_hash = None
     current_user.verification_code_expires_at = None
+    record_audit_event(db, current_user.id, "auth.email_verified")
     db.commit()
     db.refresh(current_user)
     return UserOut.model_validate(current_user)
@@ -220,6 +241,7 @@ def mfa_confirm(
     if not verify_totp_code(current_user.mfa_secret, body.code):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect code")
     current_user.mfa_enabled = True
+    record_audit_event(db, current_user.id, "auth.mfa_enabled")
     db.commit()
     db.refresh(current_user)
     return UserOut.model_validate(current_user)
@@ -237,4 +259,5 @@ def mfa_disable(
         )
     current_user.mfa_enabled = False
     current_user.mfa_secret = None
+    record_audit_event(db, current_user.id, "auth.mfa_disabled")
     db.commit()

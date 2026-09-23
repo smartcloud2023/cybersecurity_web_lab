@@ -21,6 +21,9 @@ import { PersonalInfoSection } from "./sections/personal-info";
 import { SocialIdentitySection } from "./sections/social-identity";
 import { LoginAuthSection } from "./sections/login-auth";
 import { SecurityCenterSection } from "./sections/security-center";
+import { DevicesSessionsSection } from "./sections/devices-sessions";
+import { AuditLogSection } from "./sections/audit-log";
+import { ApiKeysSection } from "./sections/api-keys";
 import { RolesPermissionsSection } from "./sections/roles-permissions";
 import { PreferencesSection } from "./sections/preferences";
 import { CyberProfileSection } from "./sections/cyber-profile";
@@ -111,15 +114,7 @@ export function ProfileShell() {
           <LoginAuthSection user={user} token={token} onUpdated={setUser} />
         )}
         {active === "security-center" && <SecurityCenterSection user={user} />}
-        {active === "devices" && (
-          <SectionCard title="Devices & Sessions">
-            <ComingSoon
-              icon={Laptop}
-              title="Session tracking isn't built yet"
-              description="A list of devices and active sessions you can review and revoke is planned but not built yet."
-            />
-          </SectionCard>
-        )}
+        {active === "devices" && <DevicesSessionsSection token={token} />}
         {active === "connected-apps" && (
           <SectionCard title="Connected Applications">
             <ComingSoon
@@ -129,25 +124,9 @@ export function ProfileShell() {
             />
           </SectionCard>
         )}
-        {active === "api-keys" && (
-          <SectionCard title="API Keys & Tokens">
-            <ComingSoon
-              icon={Code2}
-              title="No public API yet"
-              description="Personal API keys will appear here once CyberLab exposes a public API."
-            />
-          </SectionCard>
-        )}
+        {active === "api-keys" && <ApiKeysSection token={token} />}
         {active === "roles" && <RolesPermissionsSection user={user} />}
-        {active === "audit" && (
-          <SectionCard title="Activity & Audit Logs">
-            <ComingSoon
-              icon={ScrollText}
-              title="Audit logging isn't built yet"
-              description="A record of sign-ins, profile changes, and security events is planned but not built yet."
-            />
-          </SectionCard>
-        )}
+        {active === "audit" && <AuditLogSection token={token} />}
         {active === "privacy" && (
           <SectionCard title="Privacy & Consent">
             <ComingSoon

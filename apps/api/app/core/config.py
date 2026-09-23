@@ -38,5 +38,15 @@ class Settings(BaseSettings):
     smtp_use_tls: bool = True
     smtp_from_email: str = "no-reply@cyberlab.local"
 
+    # WebAuthn (passkeys). rp_id must be the exact domain the browser loads
+    # the frontend from (no scheme/port) — "localhost" works for local dev
+    # since browsers treat it as a secure context; set both to your real
+    # domain before this matters in production. origin must include the
+    # scheme and match exactly what the browser sends, or verification
+    # fails by design (that's WebAuthn's whole phishing defense).
+    webauthn_rp_id: str = "localhost"
+    webauthn_rp_name: str = "CyberLab"
+    webauthn_origin: str = "http://localhost:3000"
+
 
 settings = Settings()

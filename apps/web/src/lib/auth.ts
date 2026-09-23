@@ -118,6 +118,13 @@ export function logout() {
   setToken(null);
 }
 
+// For flows that get a token from somewhere other than this module's own
+// register/login/mfaVerify (currently just passkey login — see
+// lib/account.ts) but still need to land in the same shared store.
+export function applyExternalToken(token: string) {
+  setToken(token);
+}
+
 export async function register(email: string, password: string): Promise<User> {
   const data = await apiFetch<TokenResponse>("/api/auth/register", {
     method: "POST",

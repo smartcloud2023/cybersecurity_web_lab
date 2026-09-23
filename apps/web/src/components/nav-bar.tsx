@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ShieldHalf } from "lucide-react";
 import { useAuthToken } from "@/hooks/use-auth";
 
 const links = [
-  { href: "/dashboard", label: "Dashboard" },
   { href: "/labs", label: "Labs" },
   { href: "/pricing", label: "Pricing" },
 ];
@@ -18,25 +18,38 @@ export function NavBar() {
   if (pathname?.startsWith("/dashboard")) return null;
 
   return (
-    <header className="border-b border-black/10 dark:border-white/10">
+    <header className="dash sticky top-0 z-40 border-b border-[var(--dash-border)] bg-[var(--dash-page)]/90 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
-          CyberLab
+        <Link href="/" className="flex items-center gap-2">
+          <span
+            className="flex h-7 w-7 items-center justify-center rounded-lg"
+            style={{ backgroundColor: "var(--accent-soft)" }}
+          >
+            <ShieldHalf className="h-4 w-4" style={{ color: "var(--accent)" }} />
+          </span>
+          <span className="text-base font-semibold tracking-tight text-[var(--dash-ink)]">
+            CyberLab
+          </span>
         </Link>
-        <nav className="flex items-center gap-6 text-sm">
+
+        <nav className="hidden items-center gap-7 text-sm sm:flex">
           {links.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              className="text-black/70 hover:text-black dark:text-white/70 dark:hover:text-white"
+              className="text-[var(--dash-ink-secondary)] transition hover:text-[var(--dash-ink)]"
             >
               {link.label}
             </Link>
           ))}
+        </nav>
+
+        <div className="flex items-center gap-2">
           {token ? (
             <Link
               href="/dashboard"
-              className="rounded-md bg-foreground px-3 py-1.5 text-background hover:opacity-90"
+              className="rounded-full px-4 py-2 text-sm font-medium transition hover:opacity-90"
+              style={{ backgroundColor: "var(--accent)", color: "var(--accent-ink)" }}
             >
               Go to dashboard
             </Link>
@@ -44,19 +57,20 @@ export function NavBar() {
             <>
               <Link
                 href="/login"
-                className="rounded-md border border-black/10 px-3 py-1.5 hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/10"
+                className="hidden rounded-full px-3 py-2 text-sm font-medium text-[var(--dash-ink-secondary)] transition hover:text-[var(--dash-ink)] sm:inline-block"
               >
                 Log in
               </Link>
               <Link
                 href="/register"
-                className="rounded-md bg-foreground px-3 py-1.5 text-background hover:opacity-90"
+                className="rounded-full px-4 py-2 text-sm font-medium transition hover:opacity-90"
+                style={{ backgroundColor: "var(--accent)", color: "var(--accent-ink)" }}
               >
                 Sign up
               </Link>
             </>
           )}
-        </nav>
+        </div>
       </div>
     </header>
   );

@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -41,15 +41,20 @@ router = APIRouter(tags=["auth"])
 VERIFICATION_CODE_TTL = timedelta(minutes=10)
 
 
-def _issue_verification_code(user: User) -> None:
+def _issue_verification_code(user: User, background_tasks: BackgroundTasks) -> None:
     code = generate_verification_code()
     user.verification_code_hash = hash_code(code)
     user.verification_code_expires_at = datetime.now(timezone.utc) + VERIFICATION_CODE_TTL
-    send_verification_email(user.email, code)
+    # Sent after the response goes out — an unreachable/slow SMTP server
+    # (see app/core/email.py's timeout + fallback) shouldn't make
+    # register/resend hang on the request itself.
+    background_tasks.add_task(send_verification_email, user.email, code)
 
 
 @router.post("/auth/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register(body: RegisterRequest, db: Session = Depends(get_db)) -> TokenResponse:
+def register(
+    body: RegisterRequest, background_tasks: BackgroundTasks, db: Session = Depends(get_db)
+) -> TokenResponse:
     existing = db.scalar(select(User).where(User.email == body.email))
     if existing is not None:
         raise HTTPException(
@@ -62,7 +67,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)) -> TokenRespo
         auth_id=body.email,
         hashed_password=hash_password(body.password),
     )
-    _issue_verification_code(user)
+    _issue_verification_code(user, background_tasks)
     db.add(user)
     db.commit()
     db.refresh(user)
@@ -172,6 +177,7 @@ def verify_email(
 
 @router.post("/auth/resend-verification", status_code=status.HTTP_204_NO_CONTENT)
 def resend_verification(
+    background_tasks: BackgroundTasks,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> None:
@@ -179,7 +185,7 @@ def resend_verification(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Email is already verified"
         )
-    _issue_verification_code(current_user)
+    _issue_verification_code(current_user, background_tasks)
     db.commit()
 
 

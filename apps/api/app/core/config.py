@@ -24,5 +24,19 @@ class Settings(BaseSettings):
     def cors_origins_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
 
+    # SMTP is the one transport that works with almost every provider (a
+    # Gmail App Password for quick testing, Amazon SES's SMTP interface —
+    # matching the blueprint's AWS choice — or SendGrid/Mailgun/Postmark),
+    # so it's the default rather than a provider-specific API integration.
+    # Leaving smtp_host unset keeps verification codes as a console log,
+    # which is fine for local/dev use but not real delivery — see
+    # app/core/email.py.
+    smtp_host: str | None = None
+    smtp_port: int = 587
+    smtp_username: str | None = None
+    smtp_password: str | None = None
+    smtp_use_tls: bool = True
+    smtp_from_email: str = "no-reply@cyberlab.local"
+
 
 settings = Settings()

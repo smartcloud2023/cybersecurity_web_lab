@@ -32,6 +32,14 @@ services:
       #   CORS_ORIGINS=http://1.2.3.4:3000 NEXT_PUBLIC_API_URL=http://1.2.3.4:8000 \
       #     docker compose -f docker-compose.local.yml up --build
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # Optional — unset means verification codes only land in this
+      # container's logs (`docker compose -f docker-compose.local.yml logs
+      # api`), not a real inbox — see apps/api/.env.example for setup.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-no-reply@cyberlab.local}
     ports:
       - "8000:8000"
     depends_on:

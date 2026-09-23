@@ -25,6 +25,15 @@ services:
       SECRET_KEY: ${SECRET_KEY:-please-set-a-real-secret-key-in-env}
       # No CORS_ORIGINS override — web and api share an origin behind
       # nginx, so cross-origin CORS never triggers here.
+      # Optional — unset means verification codes only land in this
+      # container's logs (`docker compose logs api`), not a real inbox. Set
+      # these in .env before relying on email verification with real users
+      # — see apps/api/.env.example for setup (Gmail App Password or SES).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-no-reply@cyberlab.local}
     expose:
       - "8000"
     depends_on:

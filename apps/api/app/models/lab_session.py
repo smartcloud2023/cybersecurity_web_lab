@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -34,10 +34,21 @@ class LabSession(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         Enum(LabSessionStatus, name="lab_session_status"),
         default=LabSessionStatus.requested,
     )
+    # Hard cap on session lifetime regardless of activity — a safety net
+    # distinct from last_active_at's idle timeout below.
     expires_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
-    # Opaque pointer to the provisioned infra (e.g. Terraform state key).
+    # Bumped by the heartbeat endpoint while the student has the lab page
+    # open. The background reaper destroys a ready/active session once this
+    # is more than settings.lab_idle_timeout_minutes in the past.
+    last_active_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # Opaque pointer to the provisioned infra (container name/ID today; a
+    # Terraform state key once provisioning moves to AWS).
     resource_ref: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    port: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    connection_info: Mapped[str | None] = mapped_column(String(500), nullable=True)
     # Hash of the session's unique flag — never the flag itself.
     flag_hash: Mapped[str | None] = mapped_column(String(128), nullable=True)

@@ -5,12 +5,12 @@ import { StatCard } from "@/components/dashboard/stat-card";
 import { LabsStatusDonut } from "@/components/dashboard/charts/labs-status-donut";
 import { ScoreTrendChart } from "@/components/dashboard/charts/score-trend-chart";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
+import { ActiveLabCard } from "@/components/dashboard/active-lab-card";
 
-// Placeholder data — replace with a call to GET /api/me, /api/progress,
-// and /api/lab-sessions/{active} once the backend is wired up.
+// Placeholder data — replace with a call to GET /api/me and /api/progress
+// once those are wired up. The active-lab card below is real (GET
+// /api/me/lab-sessions), everything else on this page still isn't.
 const student = { name: "Student" };
-const activeLab = { title: "WEB001 — Recon & Exploitation", status: "Active", expiresIn: "42 min" };
-const nextLesson = { slug: "web001", title: "WEB001 — Recon & Exploitation" };
 
 export default function DashboardPage() {
   return (
@@ -36,22 +36,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col gap-4">
-            <div className="dash rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
-              <h2 className="text-sm font-medium text-[var(--dash-ink-secondary)]">
-                Active lab
-              </h2>
-              <p className="mt-2 font-medium">{activeLab.title}</p>
-              <p className="text-xs text-[var(--dash-ink-muted)]">
-                {activeLab.status} · expires in {activeLab.expiresIn}
-              </p>
-              <Link
-                href={`/labs/${nextLesson.slug}`}
-                className="mt-3 inline-block rounded-md px-3 py-1.5 text-xs font-medium"
-                style={{ backgroundColor: "var(--accent)", color: "var(--accent-ink)" }}
-              >
-                Resume lab
-              </Link>
-            </div>
+            <ActiveLabCard />
 
             <div className="dash rounded-xl border border-[var(--dash-border)] bg-[var(--dash-surface)] p-4">
               <h2 className="text-sm font-medium text-[var(--dash-ink-secondary)]">

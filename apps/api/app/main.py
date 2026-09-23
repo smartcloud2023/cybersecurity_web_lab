@@ -1,3 +1,6 @@
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -5,11 +8,23 @@ from app.api.api_keys import router as api_keys_router
 from app.api.audit_events import router as audit_events_router
 from app.api.auth import router as auth_router
 from app.api.health import router as health_router
+from app.api.labs import router as labs_router
 from app.api.passkeys import router as passkeys_router
 from app.api.sessions import router as sessions_router
 from app.core.config import settings
+from app.core.reaper import run_reaper_loop
 
-app = FastAPI(title="CyberLab API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    reaper_task = asyncio.create_task(run_reaper_loop())
+    try:
+        yield
+    finally:
+        reaper_task.cancel()
+
+
+app = FastAPI(title="CyberLab API", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,3 +40,4 @@ app.include_router(sessions_router, prefix="/api")
 app.include_router(audit_events_router, prefix="/api")
 app.include_router(api_keys_router, prefix="/api")
 app.include_router(passkeys_router, prefix="/api")
+app.include_router(labs_router, prefix="/api")

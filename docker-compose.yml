@@ -34,11 +34,41 @@ services:
       SMTP_USERNAME: ${SMTP_USERNAME:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM_EMAIL: ${SMTP_FROM_EMAIL:-no-reply@cyberlab.local}
+      # LAB_PROVISIONER=fake (the default) tracks lab sessions through the
+      # full state machine without starting any containers — safe with no
+      # further setup. Switch to "docker" only once you've built the lab
+      # image(s) (e.g. `docker build -t cyberlab/web001:latest ./labs/WEB001`)
+      # — the docker.sock mount below is what lets this container start
+      # sibling lab containers on the host; treat that mount as seriously as
+      # SECRET_KEY, since it's effectively root-equivalent host access.
+      LAB_PROVISIONER: ${LAB_PROVISIONER:-fake}
+      LAB_DOCKER_NETWORK: ${LAB_DOCKER_NETWORK:-cyberlab_lab_net}
+      LAB_PUBLIC_HOST: ${LAB_PUBLIC_HOST:-localhost}
+      LAB_IDLE_TIMEOUT_MINUTES: ${LAB_IDLE_TIMEOUT_MINUTES:-10}
+      LAB_MAX_DURATION_MINUTES: ${LAB_MAX_DURATION_MINUTES:-120}
+      LAB_DAILY_SESSION_LIMIT: ${LAB_DAILY_SESSION_LIMIT:-5}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     expose:
       - "8000"
     depends_on:
       db:
         condition: service_healthy
+      lab-net-setup:
+        condition: service_completed_successfully
+
+  # Creates the lab containers' Docker network if it doesn't already exist —
+  # a plain `docker network create`, not a compose-managed network, since
+  # lab containers are started directly by the api container (via the
+  # socket mount above) rather than through compose.
+  lab-net-setup:
+    image: docker:27-cli
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    entrypoint: sh
+    command:
+      - -c
+      - docker network inspect ${LAB_DOCKER_NETWORK:-cyberlab_lab_net} >/dev/null 2>&1 || docker network create ${LAB_DOCKER_NETWORK:-cyberlab_lab_net}
 
   web:
     build: ./apps/web

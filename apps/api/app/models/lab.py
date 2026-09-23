@@ -20,8 +20,12 @@ class Lab(UUIDPrimaryKeyMixin, Base):
     slug: Mapped[str] = mapped_column(String(50), unique=True, index=True)
     title: Mapped[str] = mapped_column(String(200))
     level: Mapped[LabLevel] = mapped_column(Enum(LabLevel, name="lab_level"))
-    # Reference to the approved Terraform module for this lab, e.g. "WEB001".
+    # The Docker image a session's container is provisioned from, e.g.
+    # "cyberlab/web001:latest" — a Terraform module reference once
+    # provisioning moves to AWS, per the blueprint's later migration.
     template: Mapped[str] = mapped_column(String(100))
+    summary: Mapped[str | None] = mapped_column(String(500))
+    published: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class LabStep(UUIDPrimaryKeyMixin, Base):

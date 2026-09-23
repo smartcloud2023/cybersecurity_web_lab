@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { Suspense, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { startAuthentication } from "@simplewebauthn/browser";
 import { Fingerprint } from "lucide-react";
 import { login, mfaVerify } from "@/lib/auth";
@@ -12,7 +12,17 @@ import { AuthShell } from "@/components/auth/auth-shell";
 import { OtpInput } from "@/components/auth/otp-input";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const next = searchParams.get("next") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +42,7 @@ export default function LoginPage() {
       if (result.mfaRequired) {
         setPendingToken(result.pendingToken);
       } else {
-        router.push("/dashboard");
+        router.push(next);
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
@@ -52,7 +62,7 @@ export default function LoginPage() {
       const { challengeToken, optionsJSON } = await passkeyLoginOptions(email);
       const credential = await startAuthentication({ optionsJSON });
       await passkeyLoginVerify(challengeToken, credential);
-      router.push("/dashboard");
+      router.push(next);
     } catch (err) {
       if (err instanceof ApiError) {
         setError(err.message);
@@ -72,7 +82,7 @@ export default function LoginPage() {
     setMfaSubmitting(true);
     try {
       await mfaVerify(pendingToken, mfaCode);
-      router.push("/dashboard");
+      router.push(next);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Try again.");
     } finally {

@@ -48,5 +48,20 @@ class Settings(BaseSettings):
     webauthn_rp_name: str = "CyberLab"
     webauthn_origin: str = "http://localhost:3000"
 
+    # Lab provisioning. "fake" (default) tracks sessions through the same
+    # state machine and API without touching Docker at all — safe until the
+    # deployment actually has the docker.sock mount + lab image built (see
+    # docker-compose.yml). Switch to "docker" once that's in place.
+    lab_provisioner: str = "fake"
+    lab_docker_network: str = "cyberlab_lab_net"
+    # The host/IP students' browsers use to reach a provisioned target —
+    # Docker publishes the container's port on the host, so this must be
+    # something reachable from outside the container itself (an EC2 public
+    # IP or domain in production, not "localhost").
+    lab_public_host: str = "localhost"
+    lab_idle_timeout_minutes: int = 10
+    lab_max_duration_minutes: int = 120
+    lab_daily_session_limit: int = 5
+
 
 settings = Settings()

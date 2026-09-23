@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import timedelta
 
@@ -13,6 +14,8 @@ from app.models.lab_session import LabSession, LabSessionStatus
 from app.models.progress import Progress, ProgressStatus
 from app.services.mutation import draw_variant, generate_flag
 from app.services.provisioner import LabProvisioner, ProvisioningError
+
+logger = logging.getLogger("cyberlab.lab_sessions")
 
 ACTIVE_STATUSES = (
     LabSessionStatus.requested,
@@ -92,7 +95,12 @@ def launch_lab(
 
     try:
         result = provisioner.provision(session, lab, variant, flag)
-    except ProvisioningError:
+    except ProvisioningError as exc:
+        # The real cause (e.g. docker stderr) never reaches the student —
+        # the API only returns a generic 502 — so this is the only place
+        # it's visible at all. Check `docker compose logs api` after a
+        # failed launch.
+        logger.error("Provisioning failed for session %s: %s", session.id, exc)
         session.status = LabSessionStatus.failed
         record_audit_event(db, user_id, "lab.launch_failed", lab.slug)
         db.commit()

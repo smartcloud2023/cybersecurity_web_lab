@@ -8,8 +8,16 @@ from app.api.deps import get_current_user
 from app.db.session import get_db
 from app.models.lab import Lab, LabStep
 from app.models.lab_session import LabSession
+from app.models.progress import Progress, ProgressStatus
 from app.models.user import User
-from app.schemas.lab import LabDetailOut, LabOut, LabSessionOut, SubmitFlagRequest
+from app.schemas.lab import (
+    ActivityItemOut,
+    LabDetailOut,
+    LabOut,
+    LabSessionOut,
+    ProgressOut,
+    SubmitFlagRequest,
+)
 from app.services.lab_sessions import (
     ACTIVE_STATUSES,
     DailyLimitExceededError,
@@ -89,6 +97,81 @@ def launch(
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY, detail="Couldn't start the lab environment."
         ) from exc
+
+
+@router.get("/progress", response_model=list[ProgressOut])
+def list_progress(
+    current_user: User = Depends(get_current_user), db: Session = Depends(get_db)
+) -> list[ProgressOut]:
+    """One row per published lab for the current student — labs with no
+    Progress row yet default to not_started, so the dashboard/progress page
+    always has a complete picture, not just the labs that were touched."""
+    labs = list(db.scalars(select(Lab).where(Lab.published.is_(True)).order_by(Lab.slug)))
+    progress_by_lab = {
+        p.lab_id: p
+        for p in db.scalars(
+            select(Progress).where(
+                Progress.user_id == current_user.id,
+                Progress.lab_id.in_([lab.id for lab in labs]),
+            )
+        )
+    }
+    return [
+        ProgressOut(
+            lab_id=lab.id,
+            lab_slug=lab.slug,
+            lab_title=lab.title,
+            level=lab.level,
+            status=(progress_by_lab[lab.id].status if lab.id in progress_by_lab else ProgressStatus.not_started),
+            score=progress_by_lab[lab.id].score if lab.id in progress_by_lab else 0,
+        )
+        for lab in labs
+    ]
+
+
+@router.get("/me/activity", response_model=list[ActivityItemOut])
+def list_my_activity(
+    limit: int = 10,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> list[ActivityItemOut]:
+    sessions = list(
+        db.scalars(
+            select(LabSession)
+            .where(LabSession.user_id == current_user.id)
+            .order_by(LabSession.created_at.desc())
+            .limit(limit)
+        )
+    )
+    lab_ids = {s.lab_id for s in sessions}
+    labs = {lab.id: lab for lab in db.scalars(select(Lab).where(Lab.id.in_(lab_ids)))} if lab_ids else {}
+    progress_by_lab = (
+        {
+            p.lab_id: p
+            for p in db.scalars(
+                select(Progress).where(
+                    Progress.user_id == current_user.id, Progress.lab_id.in_(lab_ids)
+                )
+            )
+        }
+        if lab_ids
+        else {}
+    )
+    result = []
+    for s in sessions:
+        lab = labs.get(s.lab_id)
+        progress = progress_by_lab.get(s.lab_id)
+        result.append(
+            ActivityItemOut(
+                session_id=s.id,
+                lab_slug=lab.slug if lab else "",
+                lab_title=lab.title if lab else "Unknown lab",
+                status=s.status,
+                score=progress.score if progress and progress.status == ProgressStatus.completed else None,
+                created_at=s.created_at,
+            )
+        )
+    return result
 
 
 @router.get("/me/lab-sessions", response_model=list[LabSessionOut])

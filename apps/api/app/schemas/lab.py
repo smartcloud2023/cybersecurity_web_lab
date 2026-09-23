@@ -5,6 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.models.lab import LabLevel
 from app.models.lab_session import LabSessionStatus
+from app.models.progress import ProgressStatus
 
 
 class LabOut(BaseModel):
@@ -45,3 +46,25 @@ class LabSessionOut(BaseModel):
 
 class SubmitFlagRequest(BaseModel):
     flag: str = Field(min_length=1, max_length=200)
+
+
+class ProgressOut(BaseModel):
+    lab_id: uuid.UUID
+    lab_slug: str
+    lab_title: str
+    level: LabLevel
+    status: ProgressStatus
+    score: int
+
+    model_config = {"from_attributes": True}
+
+
+class ActivityItemOut(BaseModel):
+    session_id: uuid.UUID
+    lab_slug: str
+    lab_title: str
+    status: LabSessionStatus
+    score: int | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

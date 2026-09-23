@@ -1,15 +1,11 @@
 import Link from "next/link";
-import { FlaskConical, Trophy, Activity, BadgeCheck } from "lucide-react";
 import { Topbar } from "@/components/dashboard/topbar";
-import { StatCard } from "@/components/dashboard/stat-card";
+import { DashboardStats } from "@/components/dashboard/dashboard-stats";
 import { LabsStatusDonut } from "@/components/dashboard/charts/labs-status-donut";
 import { ScoreTrendChart } from "@/components/dashboard/charts/score-trend-chart";
 import { RecentActivity } from "@/components/dashboard/recent-activity";
 import { ActiveLabCard } from "@/components/dashboard/active-lab-card";
 
-// Placeholder data — replace with a call to GET /api/me and /api/progress
-// once those are wired up. The active-lab card below is real (GET
-// /api/me/lab-sessions), everything else on this page still isn't.
 const student = { name: "Student" };
 
 export default function DashboardPage() {
@@ -18,12 +14,7 @@ export default function DashboardPage() {
       <Topbar title="Dashboard" breadcrumb={`Welcome back, ${student.name}`} />
 
       <div className="flex-1 space-y-6 p-6">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <StatCard label="Labs completed" value="2" delta="+1 this week" icon={Trophy} />
-          <StatCard label="Active sessions" value="1" icon={FlaskConical} />
-          <StatCard label="Avg. tradecraft score" value="74" delta="+12" icon={Activity} />
-          <StatCard label="Credentials earned" value="0" icon={BadgeCheck} />
-        </div>
+        <DashboardStats />
 
         <div className="grid gap-4 lg:grid-cols-2">
           <ScoreTrendChart />

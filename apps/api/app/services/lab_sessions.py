@@ -62,6 +62,20 @@ def count_sessions_today(db: Session, user_id: uuid.UUID, lab_id: uuid.UUID) -> 
     )
 
 
+def _ensure_in_progress(db: Session, user_id: uuid.UUID, lab_id: uuid.UUID) -> None:
+    """Marks the lab in_progress for this student the moment they actually
+    launch it, rather than leaving Progress untouched until (if ever) they
+    submit a correct flag — otherwise the dashboard has nothing to show for
+    a launch until completion. Never downgrades an already-completed lab."""
+    progress = db.scalar(
+        select(Progress).where(Progress.user_id == user_id, Progress.lab_id == lab_id)
+    )
+    if progress is None:
+        db.add(Progress(user_id=user_id, lab_id=lab_id, status=ProgressStatus.in_progress, score=0))
+    elif progress.status == ProgressStatus.not_started:
+        progress.status = ProgressStatus.in_progress
+
+
 def launch_lab(
     db: Session, user_id: uuid.UUID, lab: Lab, provisioner: LabProvisioner
 ) -> LabSession:
@@ -111,6 +125,7 @@ def launch_lab(
     session.port = result.port
     session.connection_info = result.connection_info
     session.expires_at = utcnow() + timedelta(minutes=settings.lab_max_duration_minutes)
+    _ensure_in_progress(db, user_id, lab.id)
     record_audit_event(db, user_id, "lab.launched", lab.slug)
     db.commit()
     db.refresh(session)

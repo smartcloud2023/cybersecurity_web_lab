@@ -44,7 +44,9 @@ PAGE = """
 <style>
   body { font-family: system-ui, sans-serif; max-width: 640px; margin: 3rem auto; color: #1a1a19; }
   h1 { font-size: 1.25rem; }
-  input[type=text] { padding: .5rem; width: 100%; box-sizing: border-box; }
+  form { display: flex; gap: .5rem; }
+  input[type=text] { padding: .5rem; flex: 1; box-sizing: border-box; }
+  button { padding: .5rem 1rem; cursor: pointer; }
   table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
   td, th { text-align: left; padding: .4rem; border-bottom: 1px solid #ddd; }
   .error { color: #b91c1c; font-family: monospace; white-space: pre-wrap; }
@@ -52,6 +54,7 @@ PAGE = """
 <h1>Northwind Corp — Employee Directory</h1>
 <form method="get">
   <input type="text" name="{{ param }}" value="{{ q }}" placeholder="Search by name…" autofocus>
+  <button type="submit">Search</button>
 </form>
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 {% if results is not none %}
